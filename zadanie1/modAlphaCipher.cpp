@@ -1,7 +1,6 @@
 #include "routeCipher.h"
 #include <vector>
-#include <stdexcept>
-#include <cmath>
+#include <cctype> 
 
 RouteCipher::RouteCipher(int columns) {
     if (columns <= 0)
@@ -9,23 +8,39 @@ RouteCipher::RouteCipher(int columns) {
     cols = columns;
 }
 
+
+std::string removeSpaces(const std::string& s) {
+    std::string result;
+    for (char c : s) {
+        if (c != ' ') {
+            result += c;
+        }
+    }
+    return result;
+}
+
 std::string RouteCipher::encrypt(const std::string& text) {
     if (text.empty()) return "";
 
-    int len = static_cast<int>(text.length());
-    int rows = (len + cols - 1) / cols; // ceil(len / cols)
+    std::string cleanText = removeSpaces(text); 
+    if (cleanText.empty()) return ""; 
+
+    int len = static_cast<int>(cleanText.length());
+    int rows = (len + cols - 1) / cols;
+
     std::vector<std::vector<char>> table(rows, std::vector<char>(cols, 0));
 
+   
     int k = 0;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             if (k < len) {
-                table[i][j] = text[k++];
+                table[i][j] = cleanText[k++];
             }
         }
     }
 
-   
+    
     std::string result;
     for (int j = cols - 1; j >= 0; --j) {
         for (int i = 0; i < rows; ++i) {
@@ -55,7 +70,7 @@ std::string RouteCipher::decrypt(const std::string& cipher) {
         }
     }
 
- 
+   
     std::string result;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -64,5 +79,6 @@ std::string RouteCipher::decrypt(const std::string& cipher) {
             }
         }
     }
+
     return result;
 }
