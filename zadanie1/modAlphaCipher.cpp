@@ -1,84 +1,50 @@
-#include "routeCipher.h"
+#include "modAlphaCipher.h"
 #include <vector>
-#include <cctype> 
+#include <map>
+#include <string>
 
-RouteCipher::RouteCipher(int columns) {
-    if (columns <= 0)
-        throw route_error("Number of columns must be positive");
-    cols = columns;
+modAlphaCipher::modAlphaCipher(const std::wstring& skey)
+{
+    for (size_t i = 0; i < numAlpha.size(); ++i) {
+        alphaNum[numAlpha[i]] = static_cast<int>(i);
+    }
+    key = convert(skey);
 }
 
-
-std::string removeSpaces(const std::string& s) {
-    std::string result;
-    for (char c : s) {
-        if (c != ' ') {
-            result += c;
-        }
+std::vector<int> modAlphaCipher::convert(const std::wstring& s)
+{
+    std::vector<int> result;
+    for (auto c : s) {
+        result.push_back(alphaNum.at(c)); // 
     }
     return result;
 }
 
-std::string RouteCipher::encrypt(const std::string& text) {
-    if (text.empty()) return "";
-
-    std::string cleanText = removeSpaces(text); 
-    if (cleanText.empty()) return ""; 
-
-    int len = static_cast<int>(cleanText.length());
-    int rows = (len + cols - 1) / cols;
-
-    std::vector<std::vector<char>> table(rows, std::vector<char>(cols, 0));
-
-   
-    int k = 0;
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            if (k < len) {
-                table[i][j] = cleanText[k++];
-            }
-        }
-    }
-
-    
-    std::string result;
-    for (int j = cols - 1; j >= 0; --j) {
-        for (int i = 0; i < rows; ++i) {
-            if (table[i][j] != 0) {
-                result += table[i][j];
-            }
-        }
+std::wstring modAlphaCipher::convert(const std::vector<int>& v)
+{
+    std::wstring result;
+    for (auto i : v) {
+        result.push_back(numAlpha[i]);
     }
     return result;
 }
 
-std::string RouteCipher::decrypt(const std::string& cipher) {
-    if (cipher.empty()) return "";
-
-    int len = static_cast<int>(cipher.length());
-    int rows = (len + cols - 1) / cols;
-
-    std::vector<std::vector<char>> table(rows, std::vector<char>(cols, 0));
-
-   
-    int k = 0;
-    for (int j = cols - 1; j >= 0; --j) {
-        for (int i = 0; i < rows; ++i) {
-            if (k < len) {
-                table[i][j] = cipher[k++];
-            }
-        }
+std::wstring modAlphaCipher::encrypt(const std::wstring& open_text)
+{
+    std::vector<int> work = convert(open_text);
+    size_t alpha_size = numAlpha.size();
+    for (size_t i = 0; i < work.size(); ++i) {
+        work[i] = (work[i] + key[i % key.size()]) % static_cast<int>(alpha_size);
     }
+    return convert(work);
+}
 
-   
-    std::string result;
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            if (table[i][j] != 0) {
-                result += table[i][j];
-            }
-        }
+std::wstring modAlphaCipher::decrypt(const std::wstring& cipher_text)
+{
+    std::vector<int> work = convert(cipher_text);
+    size_t alpha_size = numAlpha.size();
+    for (size_t i = 0; i < work.size(); ++i) {
+        work[i] = (work[i] + static_cast<int>(alpha_size) - key[i % key.size()]) % static_cast<int>(alpha_size);
     }
-
-    return result;
+    return convert(work);
 }
