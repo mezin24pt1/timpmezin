@@ -1,48 +1,68 @@
-#include "modAlphaCipher.h"
-#include <iostream>
-#include <algorithm>
+#include "routeCipher.h"
+#include <vector>
 #include <stdexcept>
-#include <locale>
-#include <codecvt>
-using namespace std;
+#include <cmath>
 
-modAlphaCipher::modAlphaCipher(const wstring& skey)
-{
-    for (unsigned i = 0; i < numAlpha.size(); i++) {
-        alphaNum[numAlpha[i]] = i;
-    }
-    key = convert(skey);
+RouteCipher::RouteCipher(int columns) {
+    if (columns <= 0)
+        throw route_error("Number of columns must be positive");
+    cols = columns;
 }
-vector<int> modAlphaCipher::convert(const wstring& s)
-{
-    vector<int> result;
-    for (auto c : s) {
-        result.push_back(alphaNum[c]);
+
+std::string RouteCipher::encrypt(const std::string& text) {
+    if (text.empty()) return "";
+
+    int len = static_cast<int>(text.length());
+    int rows = (len + cols - 1) / cols; // ceil(len / cols)
+    std::vector<std::vector<char>> table(rows, std::vector<char>(cols, 0));
+
+    int k = 0;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (k < len) {
+                table[i][j] = text[k++];
+            }
+        }
+    }
+
+   
+    std::string result;
+    for (int j = cols - 1; j >= 0; --j) {
+        for (int i = 0; i < rows; ++i) {
+            if (table[i][j] != 0) {
+                result += table[i][j];
+            }
+        }
     }
     return result;
 }
-wstring modAlphaCipher::convert(const vector<int>& v)
-{
-    wstring result;
-    for (auto i : v) {
-        result.push_back(numAlpha[i]);
+
+std::string RouteCipher::decrypt(const std::string& cipher) {
+    if (cipher.empty()) return "";
+
+    int len = static_cast<int>(cipher.length());
+    int rows = (len + cols - 1) / cols;
+
+    std::vector<std::vector<char>> table(rows, std::vector<char>(cols, 0));
+
+   
+    int k = 0;
+    for (int j = cols - 1; j >= 0; --j) {
+        for (int i = 0; i < rows; ++i) {
+            if (k < len) {
+                table[i][j] = cipher[k++];
+            }
+        }
+    }
+
+ 
+    std::string result;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (table[i][j] != 0) {
+                result += table[i][j];
+            }
+        }
     }
     return result;
-}
-wstring modAlphaCipher::encrypt(const wstring& open_text)
-{
-    vector<int> work = convert(open_text);
-    for (unsigned i = 0; i < work.size(); i++) {
-        work[i] = (work[i] + key[i % key.size()]) % numAlpha.size();
-    }
-    return convert(work);
-}
-
-wstring modAlphaCipher::decrypt(const wstring& cipher_text)
-{
-    vector<int> work = convert(cipher_text);
-    for (unsigned i = 0; i < work.size(); i++) {
-        work[i] = (work[i] + numAlpha.size() - key[i % key.size()]) % numAlpha.size();
-    }
-    return convert(work);
 }
