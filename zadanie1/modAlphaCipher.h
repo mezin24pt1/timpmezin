@@ -1,17 +1,21 @@
 #pragma once
+#include <vector>
 #include <string>
+#include <map>
 
-class route_error : public std::invalid_argument {
-public:
-    explicit route_error(const std::string& what) : std::invalid_argument(what) {}
-};
-
-class RouteCipher {
+class modAlphaCipher
+{
 private:
-    int cols;
+    std::wstring numAlpha = L"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+    std::map<wchar_t, int> alphaNum;
+    std::vector<int> key;
+
+    std::vector<int> convert(const std::wstring& s);
+    std::wstring convert(const std::vector<int>& v);
 
 public:
-    explicit RouteCipher(int columns);
-    std::string encrypt(const std::string& text);
-    std::string decrypt(const std::string& cipher);
+    modAlphaCipher() = delete;
+    modAlphaCipher(const std::wstring& skey);
+    std::wstring encrypt(const std::wstring& open_text);
+    std::wstring decrypt(const std::wstring& cipher_text);
 };
