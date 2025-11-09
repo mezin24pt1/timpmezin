@@ -1,4 +1,4 @@
-#include "table.h"
+#include "table_cipher.h"
 #include <algorithm>
 #include <vector>
 using namespace std;
@@ -83,3 +83,4 @@ wstring Table::decrypt(const wstring& cipher)
     }
     return out;
 }
+
