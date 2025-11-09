@@ -5,7 +5,7 @@
 #include <cwctype>
 #include <limits>
 #include <string>
-#include "table.h"
+#include "table_cipher.h"
 using namespace std;
 
 bool onlyCyrillic(const wstring& s)
@@ -116,3 +116,4 @@ int main()
 
     return 0;
 }
+
