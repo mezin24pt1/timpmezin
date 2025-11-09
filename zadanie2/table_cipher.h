@@ -13,3 +13,4 @@ public:
     wstring encrypt(const wstring& plain);
     wstring decrypt(const wstring& cipher);
 };
+
