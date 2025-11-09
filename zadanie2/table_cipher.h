@@ -1,17 +1,15 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <stdexcept>
+using namespace std;
 
-class cipher_error : public std::runtime_error {
-public:
-    explicit cipher_error(const std::string& message) : std::runtime_error(message) {}
-};
-
-class TableCipher {
+class Table
+{
 private:
-    int columns;
+    int cols;
 public:
-    TableCipher(int key);
-    std::wstring encrypt(const std::wstring& plain_text);
-    std::wstring decrypt(const std::wstring& cipher_text);
+    explicit Table(int key);
+    wstring encrypt(const wstring& plain);
+    wstring decrypt(const wstring& cipher);
 };
