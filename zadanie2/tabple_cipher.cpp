@@ -1,94 +1,85 @@
-#include "table_cipher.h"
+#include "table.h"
+#include <algorithm>
 #include <vector>
-#include <stdexcept>
-#include <string>
+using namespace std;
 
-bool isRussianLetter(wchar_t c) {
-    return (c >= L'А' && c <= L'Я') || c == L'Ё' ||
-           (c >= L'а' && c <= L'я') || c == L'ё';
+Table::Table(int key)
+{
+    if (key <= 0) throw invalid_argument("Ключ должен быть > 0");
+    cols = key;
 }
 
-wchar_t toUpperRussian(wchar_t c) {
-    if (c >= L'а' && c <= L'я') {
-        return c - (L'а' - L'А');
-    }
-    if (c == L'ё') return L'Ё';
-    return c;
-}
+wstring Table::encrypt(const wstring& plain)
+{
+    if (plain.empty()) throw invalid_argument("Текст не может быть пустым");
 
-std::wstring cleanRussianText(const std::wstring& s) {
-    std::wstring result;
-    for (wchar_t c : s) {
-        if (isRussianLetter(c)) {
-            result += toUpperRussian(c);
-        }
-    }
-    return result;
-}
+    int n = static_cast<int>(plain.length());
+    int rows = (n + cols - 1) / cols;
 
-TableCipher::TableCipher(int key) {
-    if (key <= 0) {
-        throw cipher_error("Ключ должен быть положительным числом");
-    }
-    columns = key;
-}
+    vector<vector<wchar_t>> grid(rows, vector<wchar_t>(cols, L' '));
+    int pos = 0;
 
-std::wstring TableCipher::encrypt(const std::wstring& plain_text) {
-    if (plain_text.empty()) {
-        throw cipher_error("Текст не может быть пустым");
-    }
-    std::wstring cleanText = cleanRussianText(plain_text);
-    if (cleanText.empty()) {
-        throw cipher_error("Нет допустимых символов (только русские буквы)");
-    }
-    int text_length = static_cast<int>(cleanText.length());
-    int rows = (text_length + columns - 1) / columns;
-    std::vector<std::vector<wchar_t>> table(rows, std::vector<wchar_t>(columns, L'Я'));
-    int index = 0;
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < columns; ++col) {
-            if (index < text_length) {
-                table[row][col] = cleanText[index++];
+    // Заполнение таблицы по строкам
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (pos < n) {
+                grid[r][c] = plain[pos++];
             }
         }
     }
-    std::wstring result;
-    for (int col = columns - 1; col >= 0; --col) {
-        for (int row = 0; row < rows; ++row) {
-            result += table[row][col];
+
+    wstring out;
+    out.reserve(n);
+    
+    // Чтение по столбцам справа налево
+    for (int c = cols - 1; c >= 0; --c) {
+        for (int r = 0; r < rows; ++r) {
+            if (grid[r][c] != L' ') {
+                out += grid[r][c];
+            }
         }
     }
-    return result;
+    return out;
 }
 
-std::wstring TableCipher::decrypt(const std::wstring& cipher_text) {
-    if (cipher_text.empty()) {
-        throw cipher_error("Текст не может быть пустым");
-    }
-    int total_chars = static_cast<int>(cipher_text.length());
-    if (total_chars % columns != 0) {
-        throw cipher_error("Длина зашифрованного текста не кратна числу столбцов");
-    }
-    int rows = total_chars / columns;
-    std::vector<std::vector<wchar_t>> table(rows, std::vector<wchar_t>(columns));
-    int index = 0;
-    for (int col = columns - 1; col >= 0; --col) {
-        for (int row = 0; row < rows; ++row) {
-            wchar_t c = cipher_text[index++];
-            if (!((c >= L'А' && c <= L'Я') || c == L'Ё')) {
-                throw cipher_error("Недопустимый символ в шифротексте"); 
+wstring Table::decrypt(const wstring& cipher)
+{
+    if (cipher.empty()) throw invalid_argument("Текст не может быть пустым");
+
+    int n = static_cast<int>(cipher.length());
+    int rows = (n + cols - 1) / cols;
+    
+    // Вычисление количества полных столбцов
+    int fullCols = n % cols;
+    if (fullCols == 0) fullCols = cols;
+
+    vector<vector<wchar_t>> grid(rows, vector<wchar_t>(cols, L' '));
+    int pos = 0;
+
+    // Заполнение таблицы по столбцам справа налево
+    for (int c = cols - 1; c >= 0; --c) {
+        int h = rows;
+        // Для неполных столбцов уменьшаем высоту
+        if (c >= fullCols) {
+            h = rows - 1;
+        }
+        for (int r = 0; r < h; ++r) {
+            if (pos < n) {
+                grid[r][c] = cipher[pos++];
             }
-            table[row][col] = c;
         }
     }
-    std::wstring result;
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < columns; ++col) {
-            result += table[row][col];
+
+    wstring out;
+    out.reserve(n);
+    
+    // Чтение по строкам слева направо
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (grid[r][c] != L' ') {
+                out += grid[r][c];
+            }
         }
     }
-    while (!result.empty() && result.back() == L'Я') {
-        result.pop_back();
-    }
-    return result;
+    return out;
 }
